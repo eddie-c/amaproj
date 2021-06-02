@@ -1,5 +1,5 @@
 #coding:utf-8
-from Tkinter import *
+import tkinter
 import requests
 from global_tools import GlobalTools
 import urllib
@@ -62,7 +62,7 @@ class LoginFrame():
         }
         res = requests.post(url=url,headers=headers,data=payload)
 
-        print res.text
+        print(res.text)
         self.getMainFrame()
     def getMainFrame(self):
         root.withdraw()

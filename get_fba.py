@@ -19,8 +19,10 @@ ASIN = ""
 
 
 def link_to_other_page(driver,url):
+    print(url)
     global ASIN
     ASIN = url.split("dp/")[1].split("/ref")[0]
+    # url.split("dp%2F")[1].split("%2Fref")[0] # 可能斜杠/ 会被转换成%2F
     try:
         driver.get(url)
     except:
@@ -36,7 +38,8 @@ def link_to_other_page(driver,url):
     if len(driver.find_elements_by_id("add-to-cart-button")) > 0:
         while True:
             try:
-                driver.find_element_by_id("add-to-cart-button").click()
+                # driver.find_element_by_id("add-to-cart-button").click()
+                driver.execute_script("document.getElementById('add-to-cart-button').click()")
                 break
             except ElementClickInterceptedException:
                 continue
@@ -50,8 +53,8 @@ def link_to_other_page(driver,url):
 
 def init_driver(driver):
     driver.implicitly_wait(10)
-    driver.set_page_load_timeout(10)
-    driver.set_script_timeout(10)
+    driver.set_page_load_timeout(5)
+    driver.set_script_timeout(5)
 
 
 
@@ -67,6 +70,7 @@ def get_fba(url,countrycode):
     driver = webdriver.Chrome()
     init_driver(driver)
     href = link_to_other_page(driver,url)
+    # href = GlobalTools.getBaseurlFromCountrycode(countrycode)+"/dp/"+asin+"/ref=redir_mobile_desktop"
     print("ASIN:"+ASIN)
     if href is not None and href != NORMAL_ADD_TO_CART:
         print("link to other page")
@@ -171,6 +175,6 @@ def get_fba(url,countrycode):
 
 if __name__=="__main__":
     # url = "https://www.amazon.co.uk/Nestling%C2%AE-Rechargeable-Automatic-Charging-Wardrobe/dp/B014H76RSK/ref=pd_cart_cp_1_1?_encoding=UTF8&pd_rd_i=B014H76RSK&pd_rd_r=KV42DV8MY51SCGD2ZNA9&pd_rd_w=imDbc&pd_rd_wg=bHY6u&psc=1&refRID=KV42DV8MY51SCGD2ZNA9"
-    url = "https://www.amazon.co.uk/Govee-Changing-Multi-Coloured-Decoration-Installation/dp/B07QBMJW6W/ref=sr_1_2_sspa?keywords=light&qid=1563175898&s=gateway&sr=8-2-spons&psc=1"
+    url = "https://www.amazon.co.uk/dp/B0742DRT5S/ref=redir_mobile_desktop"
     fba = get_fba(url,"uk")
     print("fba:",fba)

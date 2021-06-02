@@ -129,7 +129,11 @@ class amazon(object):
 
     def getbrand(self):
         try:
-            brand = self.html.find(id="brand").text.strip()
+            product_brief_text = self.html.find(id="productOverview_feature_div").find("table").text
+            import re
+            regbrand = re.compile(".*Brand\s*([^\s]*).*", re.MULTILINE)
+            groups = regbrand.findall(product_brief_text)
+            brand = groups[0]
         except:
             brand = ""
 
@@ -152,7 +156,7 @@ class amazon(object):
             self.resultmap['price'] = price.text.strip()
         self.queue.put("price:"+self.resultmap['price'])
     def getfirstavailable(self):
-        if self.countrycode=="us":
+        if self.html.find(id="productDetails_detailBullets_sections1") is not None:
             if "Date First Available" in self.html.find(id="productDetails_detailBullets_sections1").find_all("th")[-1].text:
                 first_available = self.html.find(id="productDetails_detailBullets_sections1").find_all("td")[-1]
             else:
@@ -221,12 +225,9 @@ class amazon(object):
         rows = scoretable.find_all('tr', attrs={'class': 'a-histogram-row'})
         starcount = []
 
-        if self.countrycode == "us":
-            reviewText = html.find(id="acrCustomerReviewText")
-            if reviewText != None:
-                reviewCount = int(reviewText.text.split()[0].replace(",",""))
-            else:
-                reviewCount = 0
+        reviewText = html.find(id="acrCustomerReviewText")
+        if reviewText is not None:
+            reviewCount = int(reviewText.text.split()[0].replace(",", ""))
 
             self.reviewCount = reviewCount
             # if reviewCount == 0:
@@ -236,7 +237,8 @@ class amazon(object):
             for i in range(0, len(rows)):
                 try:
                     starcount.append(
-                        int(rows[i].find('a', attrs={'class': 'histogram-review-count'}).text.split('%')[0]))
+                        # int(rows[i].find('a', attrs={'class': 'histogram-review-count'}).text.split('%')[0]))
+                        int(rows[i].text.split("star")[1].split('%')[0]))
                 except:
                     starcount.append(0)
             print(starcount)
@@ -268,7 +270,7 @@ class amazon(object):
         self.parse_comment(self.asin, self.resultmap['positivereviewcount'], self.resultmap['negtivereviewcount'])
 
     def getranking(self):
-        if self.countrycode == "us":
+        if self.html.find(id="productDetails_detailBullets_sections1") is not None:
             addtional_info_items = self.html.find(id="productDetails_detailBullets_sections1").find_all("tr")
             for tr in addtional_info_items:
                 if "Best Sellers Rank" in tr.find("th").text:
@@ -278,7 +280,7 @@ class amazon(object):
             rank = self.html.find(id="SalesRank").find("td", class_="value")
 
         if rank is not None:
-            if self.countrycode != "us":
+            if self.countrycode not in ["us","uk"] :
                 rankul = rank.find("ul")
 
                 rankitems = rank.find("ul").find_all("li")
@@ -341,6 +343,8 @@ class amazon(object):
             self.resultmap['first_level_menu'] = GlobalTools.removeBlankChars(menu_levels[0].text)
             if count>=3:
                 self.resultmap['second_level_menu'] = GlobalTools.removeBlankChars(menu_levels[2].text)
+            else:
+                self.resultmap['second_level_menu'] = ""
         except:
             pass
 
@@ -435,13 +439,13 @@ def main(queue,countrycode):
     queue.put("finish.")
 
 def single_thread_main():
-    if not os.path.isfile("d:/de.xls"):
+    if not os.path.isfile("/Users/eddie/PycharmProjects/amaproj/uk.xls"):
         messagebox.showerror("error",u"请将uk.xls放到和amazon.exe相同目录下")
         exit(0)
 
     products = []
 
-    rb = xlrd.open_workbook("d:/de.xls")
+    rb = xlrd.open_workbook("/Users/eddie/PycharmProjects/amaproj/uk.xls")
 
     try:
         sheet = rb.sheet_by_name("asin")
@@ -463,14 +467,14 @@ def single_thread_main():
         col += 1
 
     currrow = 1
-
+    from queue import Queue
     for product in products:
-        amazonobj = amazon(product)
+        amazonobj = amazon(Queue(),product,"uk")
         amazonobj.prerequest()
         result = amazonobj.parse(sheet,currrow)
         currrow += 1
         try:
-            wb.save("d:/de.xls")
+            wb.save("/Users/eddie/PycharmProjects/amaproj/uk.xls")
         except:
             messagebox.showerror("error", u"保存文件失败，运行时，请不要打开uk.xls文件")
         # except:
@@ -501,7 +505,7 @@ if __name__=="__main__":
     #
     #     # Second override 'Popen' class with our modified version.
     #     forking.Popen = _Popen
-    multiprocessing.freeze_support()
+    # multiprocessing.freeze_support()
     # main()
     single_thread_main()
 
